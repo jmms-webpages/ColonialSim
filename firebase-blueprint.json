@@ -1,0 +1,162 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User authentication profile and role",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128 },
+        "email": { "type": "string", "maxLength": 256 },
+        "displayName": { "type": "string", "maxLength": 128 },
+        "role": { "type": "string", "enum": ["student", "teacher", "admin"] },
+        "studentCode": { "type": "string", "maxLength": 64 },
+        "isAnonymous": { "type": "boolean" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["userId", "email", "role"]
+    },
+    "GameProgress": {
+      "title": "GameProgress",
+      "description": "Student simulation state and save data",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 128 },
+        "email": { "type": "string", "maxLength": 256 },
+        "currentChapter": { "type": "number" },
+        "currentCheckpoint": { "type": "number" },
+        "politicalIdentity": { "type": "string", "maxLength": 64 },
+        "patriotScore": { "type": "number" },
+        "loyalistScore": { "type": "number" },
+        "neutralScore": { "type": "number" },
+        "influence": { "type": "number" },
+        "wealth": { "type": "number" },
+        "colonialSupport": { "type": "number" },
+        "britishRelations": { "type": "number" },
+        "historicalKnowledge": { "type": "number" },
+        "hintsRemaining": { "type": "number" },
+        "completedEvents": { "type": "array" },
+        "completedQuestions": { "type": "array" },
+        "achievements": { "type": "array" },
+        "decisionHistory": { "type": "array" },
+        "reflection": { "type": "string", "maxLength": 2000 },
+        "classCode": { "type": "string", "maxLength": 64 },
+        "studentCode": { "type": "string", "maxLength": 64 },
+        "isAnonymous": { "type": "boolean" },
+        "updatedAt": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["userId", "name", "email", "currentChapter"]
+    },
+    "QuestionAttempt": {
+      "title": "QuestionAttempt",
+      "description": "Student question attempt record for analytics and standards mastery",
+      "type": "object",
+      "properties": {
+        "attemptId": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "studentName": { "type": "string", "maxLength": 128 },
+        "questionId": { "type": "string", "maxLength": 128 },
+        "standardId": { "type": "string", "maxLength": 128 },
+        "chapter": { "type": "number" },
+        "isCorrect": { "type": "boolean" },
+        "selectedOption": { "type": "string", "maxLength": 1000 },
+        "timestamp": { "type": "string" }
+      },
+      "required": ["userId", "questionId", "standardId", "isCorrect"]
+    },
+    "ClassroomStats": {
+      "title": "ClassroomStats",
+      "description": "Aggregated colony alignments for the classroom simulation",
+      "type": "object",
+      "properties": {
+        "classCode": { "type": "string", "maxLength": 64 },
+        "colonyStats": { "type": "object" },
+        "totalDecisions": { "type": "number" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["classCode"]
+    },
+    "Class": {
+      "title": "Class",
+      "description": "Class created by teacher",
+      "type": "object",
+      "properties": {
+        "classId": { "type": "string", "maxLength": 64 },
+        "name": { "type": "string", "maxLength": 128 },
+        "teacherId": { "type": "string", "maxLength": 128 },
+        "teacherName": { "type": "string", "maxLength": 128 },
+        "code": { "type": "string", "maxLength": 32 },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["classId", "name", "teacherId", "code"]
+    },
+    "ClassEvent": {
+      "title": "ClassEvent",
+      "description": "Classroom wide live breaking event triggered by teacher",
+      "type": "object",
+      "properties": {
+        "eventId": { "type": "string", "maxLength": 64 },
+        "classCode": { "type": "string", "maxLength": 64 },
+        "title": { "type": "string", "maxLength": 128 },
+        "content": { "type": "string", "maxLength": 1000 },
+        "options": { "type": "array" },
+        "active": { "type": "boolean" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["eventId", "title", "active"]
+    },
+    "CustomQuestion": {
+      "title": "CustomQuestion",
+      "description": "Teacher created or edited question",
+      "type": "object",
+      "properties": {
+        "questionId": { "type": "string", "maxLength": 128 },
+        "questionText": { "type": "string", "maxLength": 1000 },
+        "questionType": { "type": "string", "maxLength": 64 },
+        "options": { "type": "array" },
+        "correctAnswer": { "type": "string", "maxLength": 1000 },
+        "explanation": { "type": "string", "maxLength": 1000 },
+        "chapter": { "type": "number" },
+        "year": { "type": "string", "maxLength": 32 },
+        "topic": { "type": "string", "maxLength": 128 },
+        "difficulty": { "type": "number" },
+        "standardId": { "type": "string", "maxLength": 64 },
+        "source": { "type": "string", "maxLength": 1000 },
+        "active": { "type": "boolean" }
+      },
+      "required": ["questionId", "questionText", "options", "correctAnswer", "chapter", "standardId"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile with role"
+    },
+    "/gameProgress/{userId}": {
+      "schema": "GameProgress",
+      "description": "Individual student saved game and statistics"
+    },
+    "/questionAttempts/{attemptId}": {
+      "schema": "QuestionAttempt",
+      "description": "Student question attempt records for teacher analytics and standards mastery"
+    },
+    "/classroomStats/{classCode}": {
+      "schema": "ClassroomStats",
+      "description": "Classroom-wide colony statistics aggregate"
+    },
+    "/classes/{classId}": {
+      "schema": "Class",
+      "description": "Classrooms created by teachers"
+    },
+    "/classEvents/{eventId}": {
+      "schema": "ClassEvent",
+      "description": "Active classroom breaking news events"
+    },
+    "/customQuestions/{questionId}": {
+      "schema": "CustomQuestion",
+      "description": "Teacher question bank overrides and additions"
+    }
+  }
+}

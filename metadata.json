@@ -1,0 +1,6 @@
+{
+  "name": "Road to Revolution",
+  "description": "An interactive 8th-grade American Revolution history simulation spanning 1763 to 1776 across the 13 colonies.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

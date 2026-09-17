@@ -1,0 +1,122 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Common helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == "jaf2jc@bearworks.jackson.sparcc.org" ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isTeacher() {
+      return isSignedIn() && (
+        isAdmin() ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['teacher', 'admin'])
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Connection test document
+    match /test/{docId} {
+      allow read, write: if isSignedIn();
+    }
+
+    // Admins collection
+    match /admins/{adminId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // Users collection
+    match /users/{userId} {
+      allow read: if isSignedIn() && (isOwner(userId) || isTeacher());
+      allow create: if isSignedIn() && isOwner(userId) &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.email is string &&
+        request.resource.data.email.size() <= 256 &&
+        // Non-admins cannot self-assign teacher or admin unless bootstrapped email
+        (request.resource.data.role == 'student' || isAdmin());
+      allow update: if isSignedIn() && (
+        isAdmin() ||
+        (isOwner(userId) &&
+         request.resource.data.userId == resource.data.userId &&
+         request.resource.data.email == resource.data.email &&
+         (request.resource.data.role == resource.data.role || isAdmin()))
+      );
+      allow delete: if isAdmin();
+    }
+
+    // Game Progress collection
+    match /gameProgress/{userId} {
+      allow read: if isSignedIn() && (isOwner(userId) || isTeacher());
+      allow create: if isSignedIn() && isOwner(userId) &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.name is string && request.resource.data.name.size() <= 128 &&
+        request.resource.data.currentChapter is number;
+      allow update: if isSignedIn() && (
+        isAdmin() ||
+        (isOwner(userId) && request.resource.data.userId == request.auth.uid) ||
+        (isTeacher() && request.resource.data.diff(resource.data).affectedKeys().hasAny(['currentChapter', 'currentCheckpoint']))
+      );
+      allow delete: if isSignedIn() && (isOwner(userId) || isTeacher());
+    }
+
+    // Question Attempts collection
+    match /questionAttempts/{attemptId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.questionId is string &&
+        request.resource.data.standardId is string &&
+        request.resource.data.isCorrect is bool;
+      allow update: if false; // immutable audit log
+      allow delete: if isAdmin();
+    }
+
+    // Classroom Stats collection
+    match /classroomStats/{classCode} {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn();
+      allow delete: if isTeacher();
+    }
+
+    // Classes collection
+    match /classes/{classId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isTeacher() &&
+        request.resource.data.teacherId == request.auth.uid;
+      allow update, delete: if isSignedIn() && (isAdmin() || (isTeacher() && resource.data.teacherId == request.auth.uid));
+    }
+
+    // Class Events collection
+    match /classEvents/{eventId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isSignedIn() && isTeacher();
+    }
+
+    // Custom Questions collection
+    match /customQuestions/{questionId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isSignedIn() && isTeacher();
+    }
+  }
+}
